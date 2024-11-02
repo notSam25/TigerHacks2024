@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Upload, RefreshCw, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { Upload, RefreshCw, Plus, X, Image as ImageIcon } from 'lucide-react';
+import { useState, useCallback } from 'react';
 
 export function Demo() {
   const [ref, inView] = useInView({
@@ -20,30 +20,81 @@ export function Demo() {
     { name: 'Protein', value: 0, max: 50, unit: 'g' }
   ]);
 
+  const [dragActive, setDragActive] = useState(false);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const handleMaxChange = (index: number, value: string) => {
-    // Convert value to integer, validate within range, and handle empty input as 0
     const newValue = value === '' ? 0 : Math.max(0, Math.min(parseInt(value), 999999));
-  
-    if (!isNaN(newValue)) { // Only update if newValue is a valid number
+    if (!isNaN(newValue)) {
       setMetrics(current => current.map((metric, i) => 
         i === index ? { ...metric, max: newValue } : metric
       ));
     }
   };
-  
+
   const preventInvalidInput = (e: { key: string; preventDefault: () => void; }) => {
-    // Allow backspace, delete, and arrow keys
     const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
-    
-    if (allowedKeys.includes(e.key)) {
-      return; // Allow these keys
-    }
-  
-    // Prevent default behavior for invalid characters
+    if (allowedKeys.includes(e.key)) return;
     if (["-", ".", "e"].includes(e.key) || isNaN(Number(e.key))) {
       e.preventDefault();
     }
-  };  
+  };
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  }, []);
+
+  const validateAndProcessFile = async (file: File) => {
+    setError(null);
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB');
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImageData(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      validateAndProcessFile(e.dataTransfer.files[0]);
+    }
+  }, []);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      validateAndProcessFile(e.target.files[0]);
+    }
+  }, []);
+
+  const removeImage = () => {
+    setImageData(null);
+    setError(null);
+  };
 
   return (
     <section id="demo" className="py-32 bg-black">
@@ -67,12 +118,46 @@ export function Demo() {
           animate={inView ? { opacity: 1, scale: 1 } : {}}
           className="bg-gray-900 rounded-xl p-8 mb-8"
         >
-          <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
-            <Upload className="h-12 w-12 text-sky-400 mx-auto mb-4" />
-            <p className="text-gray-400 mb-4">Drag and drop your image here or click to browse</p>
-            <button className="bg-sky-600 text-white px-6 py-2 rounded-lg hover:bg-sky-700 transition-colors">
-              Upload Image
-            </button>
+          <div 
+            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors
+              ${dragActive ? 'border-sky-400 bg-sky-400/10' : 'border-gray-700'}
+              ${error ? 'border-red-500' : ''}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            {imageData ? (
+              <div className="relative inline-block">
+                <img 
+                  src={imageData} 
+                  alt="Uploaded food" 
+                  className="max-h-64 rounded-lg"
+                />
+                <button
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition-colors"
+                >
+                  <X className="h-4 w-4 text-white" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <ImageIcon className="h-12 w-12 text-sky-400 mx-auto mb-4" />
+                <p className="text-gray-400 mb-4">
+                  {error || 'Drag and drop your image here or click to browse'}
+                </p>
+                <label className="bg-sky-600 text-white px-6 py-2 rounded-lg hover:bg-sky-700 transition-colors cursor-pointer inline-block">
+                  Upload Image
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleChange}
+                  />
+                </label>
+              </>
+            )}
           </div>
         </motion.div>
 
