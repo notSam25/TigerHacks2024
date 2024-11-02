@@ -255,7 +255,7 @@ export function Demo() {
                 {metrics.slice(1).map((metric, index) => (
                   <div key={index} className="flex justify-between text-sm text-gray-400">
                     <span>{metric.name}</span>
-                    <span>{metric.current}{metric.unit}</span>
+                    <span>{metric.current}{" " + metric.unit}</span>
                   </div>
                 ))}
               </div>
