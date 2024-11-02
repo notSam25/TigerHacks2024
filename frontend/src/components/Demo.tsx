@@ -140,7 +140,7 @@ export function Demo() {
   };
 
   return (
-    <section id="demo" className="py-32 bg-black">
+    <section id="demo" className="pt-32 pb-16 bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           ref={ref}
