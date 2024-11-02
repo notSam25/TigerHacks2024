@@ -13,7 +13,7 @@ export function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center"
           >
-            <Camera className="h-8 w-8 text-emerald-400" />
+            <Camera className="h-8 w-8 text-sky-400" />
             <span className="ml-2 text-xl font-bold text-white">NutriLens</span>
           </motion.div>
 
@@ -29,7 +29,7 @@ export function Navbar() {
               <a href="#demo" className="text-gray-300 hover:text-white transition-colors">
                 Try It Now
               </a>
-              <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
+              <button className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors">
                 Get Started
               </button>
             </div>
