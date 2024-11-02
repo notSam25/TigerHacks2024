@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Upload, RefreshCw, Plus, X, Image as ImageIcon } from 'lucide-react';
+import { RefreshCw, Plus, X, Image as ImageIcon } from 'lucide-react';
 import { useState, useCallback } from 'react';
 
 export function Demo() {
