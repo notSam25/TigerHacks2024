@@ -2,8 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { RefreshCw, Plus, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, X, Image as ImageIcon } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { ResetButtons } from './ResetButtons';
 
 const STORAGE_KEY = 'nutriLensMetrics';
 
@@ -23,23 +24,34 @@ export function Demo() {
     threshold: 0.1
   });
 
-  const [metrics, setMetrics] = useState(() => {
-    if (typeof window === 'undefined') return defaultMetrics;
-    
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return defaultMetrics;
+  const [metrics, setMetrics] = useState(defaultMetrics);
 
-    try {
-      const parsed = JSON.parse(saved);
-      return defaultMetrics.map((defaultMetric, index) => ({
-        ...defaultMetric,
-        value: parsed[index]?.value ?? defaultMetric.value,
-        max: parsed[index]?.max ?? defaultMetric.max
-      }));
-    } catch {
-      return defaultMetrics;
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMetrics(defaultMetrics.map((defaultMetric, index) => ({
+          ...defaultMetric,
+          value: parsed[index]?.value ?? defaultMetric.value,
+          max: parsed[index]?.max ?? defaultMetric.max
+        })));
+      } catch {
+        // If parsing fails, keep default metrics
+      }
     }
-  });
+  }, []);
+
+  const hasNonDefaultMax = metrics.some((metric, index) => 
+    metric.max !== defaultMetrics[index].max
+  );
+
+  const resetMaxValues = () => {
+    setMetrics(current => current.map((metric, index) => ({
+      ...metric,
+      max: defaultMetrics[index].max
+    })));
+  };
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(
@@ -261,14 +273,11 @@ export function Demo() {
           <div className="w-[calc(48rem+1rem)] flex flex-col space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-semibold text-white">Daily Progress</h3>
-              <button 
-                onClick={resetProgress}
-                className="flex items-center gap-2 text-gray-400 hover:text-sky-400 transition-colors"
-                title="Reset Daily Progress"
-              >
-                <RefreshCw className="h-5 w-5" />
-                <span>Reset Progress</span>
-              </button>
+              <ResetButtons
+                hasNonDefaultMax={hasNonDefaultMax}
+                onResetMaxValues={resetMaxValues}
+                onResetProgress={resetProgress}
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-x-4 gap-y-12">
