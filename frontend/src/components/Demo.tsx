@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Upload, RefreshCw, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { RefreshCw, Plus, X, Image as ImageIcon } from 'lucide-react';
+import { useState, useCallback } from 'react';
 
 export function Demo() {
   const [ref, inView] = useInView({
@@ -20,10 +20,80 @@ export function Demo() {
     { name: 'Protein', value: 0, max: 50, unit: 'g' }
   ]);
 
-  const handleMaxChange = (index: number, newMax: number) => {
-    setMetrics(current => current.map((metric, i) => 
-      i === index ? { ...metric, max: newMax } : metric
-    ));
+  const [dragActive, setDragActive] = useState(false);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleMaxChange = (index: number, value: string) => {
+    const newValue = value === '' ? 0 : Math.max(0, Math.min(parseInt(value), 999999));
+    if (!isNaN(newValue)) {
+      setMetrics(current => current.map((metric, i) => 
+        i === index ? { ...metric, max: newValue } : metric
+      ));
+    }
+  };
+
+  const preventInvalidInput = (e: { key: string; preventDefault: () => void; }) => {
+    const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+    if (allowedKeys.includes(e.key)) return;
+    if (["-", ".", "e"].includes(e.key) || isNaN(Number(e.key))) {
+      e.preventDefault();
+    }
+  };
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  }, []);
+
+  const validateAndProcessFile = async (file: File) => {
+    setError(null);
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB');
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImageData(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      validateAndProcessFile(e.dataTransfer.files[0]);
+    }
+  }, []);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      validateAndProcessFile(e.target.files[0]);
+    }
+  }, []);
+
+  const removeImage = () => {
+    setImageData(null);
+    setError(null);
   };
 
   return (
@@ -48,12 +118,46 @@ export function Demo() {
           animate={inView ? { opacity: 1, scale: 1 } : {}}
           className="bg-gray-900 rounded-xl p-8 mb-8"
         >
-          <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
-            <Upload className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
-            <p className="text-gray-400 mb-4">Drag and drop your image here or click to browse</p>
-            <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
-              Upload Image
-            </button>
+          <div 
+            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors
+              ${dragActive ? 'border-sky-400 bg-sky-400/10' : 'border-gray-700'}
+              ${error ? 'border-red-500' : ''}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            {imageData ? (
+              <div className="relative inline-block">
+                <img 
+                  src={imageData} 
+                  alt="Uploaded food" 
+                  className="max-h-64 rounded-lg"
+                />
+                <button
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition-colors"
+                >
+                  <X className="h-4 w-4 text-white" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <ImageIcon className="h-12 w-12 text-sky-400 mx-auto mb-4" />
+                <p className="text-gray-400 mb-4">
+                  {error || 'Drag and drop your image here or click to browse'}
+                </p>
+                <label className="bg-sky-600 text-white px-6 py-2 rounded-lg hover:bg-sky-700 transition-colors cursor-pointer inline-block">
+                  Upload Image
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleChange}
+                  />
+                </label>
+              </>
+            )}
           </div>
         </motion.div>
 
@@ -79,7 +183,7 @@ export function Demo() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-white">Nutrition Facts</h3>
               <button 
-                className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 <span>Add to Daily Total</span>
@@ -130,7 +234,7 @@ export function Demo() {
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-white">Daily Progress</h3>
             <button 
-              className="flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors"
+              className="flex items-center gap-2 text-gray-400 hover:text-sky-400 transition-colors"
               title="Reset Daily Progress"
             >
               <RefreshCw className="h-5 w-5" />
@@ -156,7 +260,7 @@ export function Demo() {
                       cy="80"
                       r="74"
                       fill="transparent"
-                      stroke="#34d399"
+                      stroke="#38bdf8"
                       strokeWidth="8"
                       strokeDasharray={`${2 * Math.PI * 74}`}
                       strokeDashoffset={`${2 * Math.PI * 74 * (1 - metric.value / metric.max)}`}
@@ -167,13 +271,18 @@ export function Demo() {
                     <span className="text-2xl text-white font-semibold">{metric.value}</span>
                     <div className="w-16 h-[1px] bg-gray-600 my-1" />
                     <div className="flex items-center gap-1">
-                      <input 
-                        type="number" 
-                        value={metric.max}
-                        onChange={(e) => handleMaxChange(index, Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
-                        title="Click to edit daily limit"
-                      />
+                    <input 
+                    type="number" 
+                    value={metric.max || ''}
+                    onChange={(e) => handleMaxChange(index, e.target.value)}
+                    onKeyDown={preventInvalidInput}
+                    placeholder="0"
+                    min="0"
+                    max="999999"
+                    step="1"
+                    className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
+                    title="Click to edit daily limit"
+                    />
                       <span className="text-gray-500 text-sm">{metric.unit}</span>
                     </div>
                   </div>

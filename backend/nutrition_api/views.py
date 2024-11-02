@@ -20,8 +20,7 @@ def call_fatsecret_api(request):
     if request.method == "POST":
         try:
             # Get API credentials from environment
-            api_key = os.getenv('FATSECRET_API_KEY')
-            api_secret = os.getenv('FATSECRET_API_SECRET')
+            api_key = ""
             
             # Get image from request
             image_file = request.FILES.get('image')

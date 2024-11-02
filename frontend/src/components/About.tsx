@@ -51,9 +51,9 @@ export function About() {
               initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: index * 0.2 }}
-              className="bg-gray-900 p-8 rounded-xl hover:bg-gray-800 transition-colors"
+              className="bg-gray-900 p-8 rounded-xl hover:bg-gray-800 transition-colors text-center"
             >
-              <feature.icon className="h-12 w-12 text-emerald-400 mb-6 mx-auto" />
+              <feature.icon className="h-12 w-12 text-sky-400 mb-6 mx-auto" />
               <h3 className="text-xl font-semibold text-white mb-4">{feature.title}</h3>
               <p className="text-gray-400">{feature.description}</p>
             </motion.div>
