@@ -5,7 +5,7 @@ import { Camera, Utensils, LineChart } from 'lucide-react';
 
 export function Hero() {
   return (
-    <section className="pt-24 pb-12 bg-gradient-to-b from-emerald-900 to-black">
+    <section className="pt-24 pb-12 bg-gradient-to-b from-sky-900 to-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <motion.div
@@ -15,7 +15,7 @@ export function Hero() {
           >
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
               Track Your Nutrition
-              <span className="block text-emerald-400">With Just a Photo</span>
+              <span className="block text-sky-400">With Just a Photo</span>
             </h1>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
               Simply snap a picture of your meal, and let AI calculate your nutrition facts instantly.
@@ -36,8 +36,8 @@ export function Hero() {
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="flex flex-col items-center"
               >
-                <div className="bg-emerald-900/30 p-4 rounded-full mb-3">
-                  <item.icon className="h-8 w-8 text-emerald-400" />
+                <div className="bg-sky-900/30 p-4 rounded-full mb-3">
+                  <item.icon className="h-8 w-8 text-sky-400" />
                 </div>
                 <span className="text-gray-300">{item.text}</span>
               </motion.div>

@@ -21,15 +21,28 @@ export function Demo() {
   ]);
 
   const handleMaxChange = (index: number, value: string) => {
-    // Remove any non-numeric characters and limit to max 999999
-    const sanitizedValue = value.replace(/\D/g, ''); // Keep only digits
+    // Convert value to integer, validate within range, and handle empty input as 0
+    const newValue = value === '' ? 0 : Math.max(0, Math.min(parseInt(value), 999999));
   
-    // Convert sanitized value to integer and clamp it to 0-999999
-    const newValue = sanitizedValue === '' ? 0 : Math.min(parseInt(sanitizedValue), 999999);
+    if (!isNaN(newValue)) { // Only update if newValue is a valid number
+      setMetrics(current => current.map((metric, i) => 
+        i === index ? { ...metric, max: newValue } : metric
+      ));
+    }
+  };
   
-    setMetrics(current => current.map((metric, i) => 
-      i === index ? { ...metric, max: newValue } : metric
-    ));
+  const preventInvalidInput = (e: { key: string; preventDefault: () => void; }) => {
+    // Allow backspace, delete, and arrow keys
+    const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+    
+    if (allowedKeys.includes(e.key)) {
+      return; // Allow these keys
+    }
+  
+    // Prevent default behavior for invalid characters
+    if (["-", ".", "e"].includes(e.key) || isNaN(Number(e.key))) {
+      e.preventDefault();
+    }
   };  
 
   return (
@@ -55,9 +68,9 @@ export function Demo() {
           className="bg-gray-900 rounded-xl p-8 mb-8"
         >
           <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
-            <Upload className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
+            <Upload className="h-12 w-12 text-sky-400 mx-auto mb-4" />
             <p className="text-gray-400 mb-4">Drag and drop your image here or click to browse</p>
-            <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
+            <button className="bg-sky-600 text-white px-6 py-2 rounded-lg hover:bg-sky-700 transition-colors">
               Upload Image
             </button>
           </div>
@@ -85,7 +98,7 @@ export function Demo() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-white">Nutrition Facts</h3>
               <button 
-                className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 <span>Add to Daily Total</span>
@@ -136,7 +149,7 @@ export function Demo() {
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-white">Daily Progress</h3>
             <button 
-              className="flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors"
+              className="flex items-center gap-2 text-gray-400 hover:text-sky-400 transition-colors"
               title="Reset Daily Progress"
             >
               <RefreshCw className="h-5 w-5" />
@@ -162,7 +175,7 @@ export function Demo() {
                       cy="80"
                       r="74"
                       fill="transparent"
-                      stroke="#34d399"
+                      stroke="#38bdf8"
                       strokeWidth="8"
                       strokeDasharray={`${2 * Math.PI * 74}`}
                       strokeDashoffset={`${2 * Math.PI * 74 * (1 - metric.value / metric.max)}`}
@@ -174,11 +187,14 @@ export function Demo() {
                     <div className="w-16 h-[1px] bg-gray-600 my-1" />
                     <div className="flex items-center gap-1">
                     <input 
-                    type="text" // Change to text to better control the input
+                    type="number" 
                     value={metric.max || ''}
                     onChange={(e) => handleMaxChange(index, e.target.value)}
+                    onKeyDown={preventInvalidInput}
                     placeholder="0"
-                    pattern="[0-9]*" // Allow only numeric input
+                    min="0"
+                    max="999999"
+                    step="1"
                     className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
                     title="Click to edit daily limit"
                     />
