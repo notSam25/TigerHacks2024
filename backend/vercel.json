@@ -1,19 +1,30 @@
 {
-    "version": 2,
     "builds": [
         {
             "src": "project/wsgi.py",
             "use": "@vercel/python",
-            "config": {
-                "maxLambdaSize": "15mb",
-                "runtime": "python3.12"
-            }
+            "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
         }
     ],
     "routes": [
         {
             "src": "/(.*)",
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
             "dest": "project/wsgi.py"
+        },
+        {
+            "src": "/(.*)",
+            "methods": ["OPTIONS"],
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
+            "status": 204
         }
     ]
 }
