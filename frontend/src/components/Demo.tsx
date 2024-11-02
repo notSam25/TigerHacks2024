@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Upload, RefreshCw, Plus } from 'lucide-react';
+import { useState } from 'react';
 
 export function Demo() {
   const [ref, inView] = useInView({
@@ -10,14 +11,20 @@ export function Demo() {
     threshold: 0.1
   });
 
-  const nutritionMetrics = [
+  const [metrics, setMetrics] = useState([
     { name: 'Calories', value: 0, max: 2000, unit: 'kcal' },
     { name: 'Total Fat', value: 0, max: 65, unit: 'g' },
     { name: 'Cholesterol', value: 0, max: 300, unit: 'mg' },
     { name: 'Sodium', value: 0, max: 2300, unit: 'mg' },
     { name: 'Total Carbs', value: 0, max: 300, unit: 'g' },
     { name: 'Protein', value: 0, max: 50, unit: 'g' }
-  ];
+  ]);
+
+  const handleMaxChange = (index: number, newMax: number) => {
+    setMetrics(current => current.map((metric, i) => 
+      i === index ? { ...metric, max: newMax } : metric
+    ));
+  };
 
   return (
     <section id="demo" className="py-32 bg-black">
@@ -132,7 +139,7 @@ export function Demo() {
           </div>
 
           <div className="grid grid-cols-3 gap-8">
-            {nutritionMetrics.map((metric, index) => (
+            {metrics.map((metric, index) => (
               <div key={index} className="text-center">
                 <div className="relative inline-block">
                   <svg className="w-40 h-40 transform -rotate-90">
@@ -163,6 +170,7 @@ export function Demo() {
                       <input 
                         type="number" 
                         value={metric.max}
+                        onChange={(e) => handleMaxChange(index, Math.max(0, parseInt(e.target.value) || 0))}
                         className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
                         title="Click to edit daily limit"
                       />
