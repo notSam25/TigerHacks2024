@@ -12,12 +12,12 @@ export function Demo() {
   });
 
   const [metrics, setMetrics] = useState([
-    { name: 'Calories', value: 0, max: 2000, unit: 'kcal' },
-    { name: 'Total Fat', value: 0, max: 65, unit: 'g' },
-    { name: 'Cholesterol', value: 0, max: 300, unit: 'mg' },
-    { name: 'Sodium', value: 0, max: 2300, unit: 'mg' },
-    { name: 'Total Carbs', value: 0, max: 300, unit: 'g' },
-    { name: 'Protein', value: 0, max: 50, unit: 'g' }
+    { name: 'Calories', value: 0, current: 0, max: 2000, unit: 'kcal' },
+    { name: 'Total Fat', value: 0, current: 0, max: 65, unit: 'g' },
+    { name: 'Cholesterol', value: 0, current: 0, max: 300, unit: 'mg' },
+    { name: 'Sodium', value: 0, current: 0, max: 2300, unit: 'mg' },
+    { name: 'Total Carbohydrates', value: 0, current: 0, max: 300, unit: 'g' },
+    { name: 'Protein', value: 0, current: 0, max: 50, unit: 'g' }
   ]);
 
   const [dragActive, setDragActive] = useState(false);
@@ -31,6 +31,20 @@ export function Demo() {
         i === index ? { ...metric, max: newValue } : metric
       ));
     }
+  };
+
+  const addToDailyTotal = () => {
+    setMetrics(current => current.map(metric => ({
+      ...metric,
+      value: Math.min(metric.value + metric.current, metric.max)
+    })));
+  };
+
+  const resetProgress = () => {
+    setMetrics(current => current.map(metric => ({
+      ...metric,
+      value: 0
+    })));
   };
 
   const preventInvalidInput = (e: { key: string; preventDefault: () => void; }) => {
@@ -54,19 +68,16 @@ export function Demo() {
   const validateAndProcessFile = async (file: File) => {
     setError(null);
     
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setError('Please upload an image file');
       return;
     }
 
-    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image size should be less than 5MB');
       return;
     }
 
-    // Convert to base64
     const reader = new FileReader();
     reader.onload = (e) => {
       setImageData(e.target?.result as string);
@@ -112,7 +123,6 @@ export function Demo() {
           </p>
         </motion.div>
 
-        {/* Upload Area */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={inView ? { opacity: 1, scale: 1 } : {}}
@@ -162,7 +172,6 @@ export function Demo() {
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Left Column - Ingredients List */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={inView ? { opacity: 1, scale: 1 } : {}}
@@ -174,7 +183,6 @@ export function Demo() {
             </div>
           </motion.div>
 
-          {/* Right Column - Nutrition Facts */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={inView ? { opacity: 1, scale: 1 } : {}}
@@ -183,6 +191,7 @@ export function Demo() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-white">Nutrition Facts</h3>
               <button 
+                onClick={addToDailyTotal}
                 className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -194,37 +203,22 @@ export function Demo() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-400">
                   <span>Calories</span>
-                  <span>0 kcal</span>
+                  <span>{metrics[0].current} kcal</span>
                 </div>
                 <div className="h-[1px] bg-gray-700" />
               </div>
               <div className="space-y-6">
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Total Fat</span>
-                  <span>0g</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Cholesterol</span>
-                  <span>0mg</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Sodium</span>
-                  <span>0mg</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Total Carbohydrates</span>
-                  <span>0g</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Protein</span>
-                  <span>0g</span>
-                </div>
+                {metrics.slice(1).map((metric, index) => (
+                  <div key={index} className="flex justify-between text-sm text-gray-400">
+                    <span>{metric.name}</span>
+                    <span>{metric.current}{metric.unit}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Daily Progress Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -234,6 +228,7 @@ export function Demo() {
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-white">Daily Progress</h3>
             <button 
+              onClick={resetProgress}
               className="flex items-center gap-2 text-gray-400 hover:text-sky-400 transition-colors"
               title="Reset Daily Progress"
             >
@@ -242,55 +237,57 @@ export function Demo() {
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-8">
-            {metrics.map((metric, index) => (
-              <div key={index} className="text-center">
-                <div className="relative inline-block">
-                  <svg className="w-40 h-40 transform -rotate-90">
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="74"
-                      fill="transparent"
-                      stroke="#1f2937"
-                      strokeWidth="8"
-                    />
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="74"
-                      fill="transparent"
-                      stroke="#38bdf8"
-                      strokeWidth="8"
-                      strokeDasharray={`${2 * Math.PI * 74}`}
-                      strokeDashoffset={`${2 * Math.PI * 74 * (1 - metric.value / metric.max)}`}
-                      className="transition-all duration-500"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl text-white font-semibold">{metric.value}</span>
-                    <div className="w-16 h-[1px] bg-gray-600 my-1" />
-                    <div className="flex items-center gap-1">
-                    <input 
-                    type="number" 
-                    value={metric.max || ''}
-                    onChange={(e) => handleMaxChange(index, e.target.value)}
-                    onKeyDown={preventInvalidInput}
-                    placeholder="0"
-                    min="0"
-                    max="999999"
-                    step="1"
-                    className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
-                    title="Click to edit daily limit"
-                    />
-                      <span className="text-gray-500 text-sm">{metric.unit}</span>
+          <div className="flex justify-center">
+            <div className="inline-grid grid-cols-3 gap-x-4 gap-y-12">
+                {metrics.map((metric, index) => (
+                <div key={index} className="text-center">
+                    <div className="relative inline-block">
+                    <svg className="w-48 h-48 transform -rotate-90">
+                        <circle
+                        cx="96"
+                        cy="96"
+                        r="88"
+                        fill="transparent"
+                        stroke="#1f2937"
+                        strokeWidth="12"
+                        />
+                        <circle
+                        cx="96"
+                        cy="96"
+                        r="88"
+                        fill="transparent"
+                        stroke="#38bdf8"
+                        strokeWidth="12"
+                        strokeDasharray={`${2 * Math.PI * 88}`}
+                        strokeDashoffset={`${2 * Math.PI * 88 * (1 - metric.value / metric.max)}`}
+                        className="transition-all duration-500"
+                        />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl text-white font-semibold">{metric.value}</span>
+                        <div className="w-16 h-[1px] bg-gray-600 my-2" />
+                        <div className="flex items-center gap-1">
+                        <input
+                            type="number"
+                            value={metric.max || ''}
+                            onChange={(e) => handleMaxChange(index, e.target.value)}
+                            onKeyDown={preventInvalidInput}
+                            placeholder="0"
+                            min="0"
+                            max="999999"
+                            step="1"
+                            className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
+                            title="Click to edit daily limit"
+                        />
+                        <span className="text-gray-500 text-sm">{metric.unit}</span>
+                        </div>
                     </div>
-                  </div>
+                    </div>
+                    <p className="text-gray-400 mt-3 text-base">{metric.name}</p>
                 </div>
-                <p className="text-gray-400 mt-2">{metric.name}</p>
-              </div>
-            ))}
-          </div>
+                ))}
+            </div>
+            </div>
         </motion.div>
       </div>
     </section>
