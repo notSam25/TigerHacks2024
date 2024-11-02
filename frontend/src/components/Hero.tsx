@@ -13,7 +13,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 mt-24">
               Track Your Nutrition
               <span className="block text-sky-400">With Just a Photo</span>
             </h1>

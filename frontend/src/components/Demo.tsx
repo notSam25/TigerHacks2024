@@ -3,7 +3,18 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { RefreshCw, Plus, X, Image as ImageIcon } from 'lucide-react';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+
+const STORAGE_KEY = 'nutriLensMetrics';
+
+const defaultMetrics = [
+  { name: 'Calories', value: 0, current: 0, max: 2000, unit: 'kcal' },
+  { name: 'Total Fat', value: 0, current: 0, max: 65, unit: 'g' },
+  { name: 'Cholesterol', value: 0, current: 0, max: 300, unit: 'mg' },
+  { name: 'Sodium', value: 0, current: 0, max: 2300, unit: 'mg' },
+  { name: 'Total Carbohydrates', value: 0, current: 0, max: 300, unit: 'g' },
+  { name: 'Protein', value: 0, current: 0, max: 50, unit: 'g' }
+];
 
 export function Demo() {
   const progressSectionRef = useRef<HTMLDivElement>(null);
@@ -12,14 +23,29 @@ export function Demo() {
     threshold: 0.1
   });
 
-  const [metrics, setMetrics] = useState([
-    { name: 'Calories', value: 0, current: 0, max: 2000, unit: 'kcal' },
-    { name: 'Total Fat', value: 0, current: 0, max: 65, unit: 'g' },
-    { name: 'Cholesterol', value: 0, current: 0, max: 300, unit: 'mg' },
-    { name: 'Sodium', value: 0, current: 0, max: 2300, unit: 'mg' },
-    { name: 'Total Carbohydrates', value: 0, current: 0, max: 300, unit: 'g' },
-    { name: 'Protein', value: 0, current: 0, max: 50, unit: 'g' }
-  ]);
+  const [metrics, setMetrics] = useState(() => {
+    if (typeof window === 'undefined') return defaultMetrics;
+    
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return defaultMetrics;
+
+    try {
+      const parsed = JSON.parse(saved);
+      return defaultMetrics.map((defaultMetric, index) => ({
+        ...defaultMetric,
+        value: parsed[index]?.value ?? defaultMetric.value,
+        max: parsed[index]?.max ?? defaultMetric.max
+      }));
+    } catch {
+      return defaultMetrics;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(
+      metrics.map(({ value, max }) => ({ value, max }))
+    ));
+  }, [metrics]);
 
   const [dragActive, setDragActive] = useState(false);
   const [imageData, setImageData] = useState<string | null>(null);
