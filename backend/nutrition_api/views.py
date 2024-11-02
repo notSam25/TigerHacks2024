@@ -4,57 +4,84 @@ from dotenv import load_dotenv
 import os
 import requests
 import json
-import base64
 
 load_dotenv()
 
 @csrf_exempt
-def call_fatsecret_api(request):
+def NutritionFacts(request):
     if request.method == "OPTIONS":
         response = JsonResponse({})
-        response["Access-Control-Allow-Origin"] = "localhost:3000"
+        response["Access-Control-Allow-Origin"] = "http://localhost:3000"  # Added http:// prefix
         response["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
         response["Access-Control-Allow-Headers"] = "Content-Type"
         return response
-        
+
     if request.method == "POST":
         try:
-            # Get API credentials from environment
-            api_key = ""
-            
-            # Get image from request
+            api_key = os.getenv('FOOD_VISOR_API')
+            if not api_key:
+                return JsonResponse({'error': 'API key not found in environment'}, status=500)
+
             image_file = request.FILES.get('image')
             if not image_file:
                 return JsonResponse({'error': 'No image provided'}, status=400)
-            
-            # Convert image to base64
-            image_data = base64.b64encode(image_file.read()).decode('utf-8')
-            
-            # Prepare request payload
-            payload = {
-                "image_b64": image_data,
-                "region": "US",
-                "language": "en",
-                "include_food_data": True
-            }
-            
-            # Set up headers with OAuth2 token
+
+            if image_file.size > 2 * 1024 * 1024:
+                return JsonResponse({'error': 'Image size must be less than 2MB'}, status=400)
+
             headers = {
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {api_key}'
+                'Authorization': f'Api-Key {api_key}'
+            }
+
+            # Define the scopes
+            scopes = [
+                "multiple_items",
+                "position",
+                "nutrition:macro",
+                "nutrition:micro",
+                "nutrition:nutriscore",
+                "quantity"
+            ]
+
+            # Create the form data correctly
+            files = {
+                'image': image_file,
             }
             
-            # Make request to FatSecret API
+            # Add scopes as separate form field
+            data = {
+                'scopes[]': scopes  # Use scopes[] to send as array
+            }
+
             response = requests.post(
-                "https://platform.fatsecret.com/rest/image-recognition/v1",
+                "https://vision.foodvisor.io/api/1.0/en/analysis/",
                 headers=headers,
-                json=payload
+                files=files,
+                data=data  # Send as form data
             )
-            
-            # Return API response
+
+            print("Response status:", response.status_code)
+            print("Response text:", response.text)
+
+            if response.status_code == 400:
+                return JsonResponse({'error': 'Invalid image format. Please use JPG or PNG'}, status=400)
+            elif response.status_code == 403:
+                return JsonResponse({'error': 'API key unauthorized or invalid scope'}, status=403)
+            elif response.status_code == 404:
+                return JsonResponse({'error': 'Requested scope does not exist'}, status=404)
+            elif response.status_code == 429:
+                return JsonResponse({'error': 'API rate limit exceeded'}, status=429)
+            elif response.status_code != 200:
+                return JsonResponse({
+                    'error': 'Failed to get nutrition facts',
+                    'details': response.text,
+                    'status': response.status_code
+                }, status=response.status_code)
+
             return JsonResponse(response.json())
-            
+
         except Exception as e:
+            print(f"Error processing request: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
-    
+
     return JsonResponse({'error': 'Method not allowed'}, status=405)

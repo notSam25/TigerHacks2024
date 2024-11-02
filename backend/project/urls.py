@@ -1,9 +1,6 @@
-from django.contrib import admin
+# project urls.py
 from django.urls import path, include
 
-API_VERSION = "v1"
-
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path(f"api/{API_VERSION}/", include("nutrition_api.urls")),
+    path('', include('nutrition_api.urls')),
 ]
