@@ -10,10 +10,10 @@ const STORAGE_KEY = 'nutriLensMetrics';
 
 const defaultMetrics = [
   { name: 'Calories', value: 0, current: 0, max: 2000, unit: 'kcal' },
-  { name: 'Total Fat', value: 0, current: 0, max: 65, unit: 'g' },
+  { name: 'Total Fat', value: 0, current: 0, max: 78, unit: 'g' },
   { name: 'Cholesterol', value: 0, current: 0, max: 300, unit: 'mg' },
   { name: 'Sodium', value: 0, current: 0, max: 2300, unit: 'mg' },
-  { name: 'Total Carbohydrates', value: 0, current: 0, max: 300, unit: 'g' },
+  { name: 'Total Carbohydrates', value: 0, current: 0, max: 275, unit: 'g' },
   { name: 'Protein', value: 0, current: 0, max: 50, unit: 'g' }
 ];
 
