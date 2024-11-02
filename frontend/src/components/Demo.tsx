@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { Plus, X, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ResetButtons } from "./ResetButtons";
 
@@ -145,7 +146,7 @@ export function Demo() {
                     }))
                 );
             }
-        } catch (error) {
+        } catch {
             setError("An error occurred while processing the image");
         }
     };
@@ -192,7 +193,7 @@ export function Demo() {
                     >
                         {imageData ? (
                             <div className="relative inline-block">
-                                <img src={imageData} alt="Uploaded food" className="max-h-64 rounded-lg" />
+                                <Image src={imageData} alt="Uploaded food" className="max-h-64 rounded-lg" width={256} height={256} />
                                 <button onClick={removeImage} className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition-colors">
                                     <X className="h-4 w-4 text-white" />
                                 </button>
