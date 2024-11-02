@@ -3,9 +3,10 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { RefreshCw, Plus, X, Image as ImageIcon } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export function Demo() {
+  const progressSectionRef = useRef<HTMLDivElement>(null);
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1
@@ -38,6 +39,11 @@ export function Demo() {
       ...metric,
       value: Math.min(metric.value + metric.current, metric.max)
     })));
+    
+    progressSectionRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
+    });
   };
 
   const resetProgress = () => {
@@ -220,38 +226,39 @@ export function Demo() {
         </div>
 
         <motion.div
+          ref={progressSectionRef}
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-12"
+          className="mt-12 flex flex-col items-center scroll-mt-8 pt-12"
         >
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-white">Daily Progress</h3>
-            <button 
-              onClick={resetProgress}
-              className="flex items-center gap-2 text-gray-400 hover:text-sky-400 transition-colors"
-              title="Reset Daily Progress"
-            >
-              <RefreshCw className="h-5 w-5" />
-              <span>Reset Progress</span>
-            </button>
-          </div>
+          <div className="w-[calc(48rem+1rem)] flex flex-col space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-white">Daily Progress</h3>
+              <button 
+                onClick={resetProgress}
+                className="flex items-center gap-2 text-gray-400 hover:text-sky-400 transition-colors"
+                title="Reset Daily Progress"
+              >
+                <RefreshCw className="h-5 w-5" />
+                <span>Reset Progress</span>
+              </button>
+            </div>
 
-          <div className="flex justify-center">
-            <div className="inline-grid grid-cols-3 gap-x-4 gap-y-12">
-                {metrics.map((metric, index) => (
+            <div className="grid grid-cols-3 gap-x-4 gap-y-12">
+              {metrics.map((metric, index) => (
                 <div key={index} className="text-center">
-                    <div className="relative inline-block">
+                  <div className="relative inline-block">
                     <svg className="w-48 h-48 transform -rotate-90">
-                        <circle
+                      <circle
                         cx="96"
                         cy="96"
                         r="88"
                         fill="transparent"
                         stroke="#1f2937"
                         strokeWidth="12"
-                        />
-                        <circle
+                      />
+                      <circle
                         cx="96"
                         cy="96"
                         r="88"
@@ -261,33 +268,33 @@ export function Demo() {
                         strokeDasharray={`${2 * Math.PI * 88}`}
                         strokeDashoffset={`${2 * Math.PI * 88 * (1 - metric.value / metric.max)}`}
                         className="transition-all duration-500"
-                        />
+                      />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl text-white font-semibold">{metric.value}</span>
-                        <div className="w-16 h-[1px] bg-gray-600 my-2" />
-                        <div className="flex items-center gap-1">
+                      <span className="text-3xl text-white font-semibold">{metric.value}</span>
+                      <div className="w-16 h-[1px] bg-gray-600 my-2" />
+                      <div className="flex items-center gap-1">
                         <input
-                            type="number"
-                            value={metric.max || ''}
-                            onChange={(e) => handleMaxChange(index, e.target.value)}
-                            onKeyDown={preventInvalidInput}
-                            placeholder="0"
-                            min="0"
-                            max="999999"
-                            step="1"
-                            className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
-                            title="Click to edit daily limit"
+                          type="number"
+                          value={metric.max || ''}
+                          onChange={(e) => handleMaxChange(index, e.target.value)}
+                          onKeyDown={preventInvalidInput}
+                          placeholder="0"
+                          min="0"
+                          max="999999"
+                          step="1"
+                          className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
+                          title="Click to edit daily limit"
                         />
                         <span className="text-gray-500 text-sm">{metric.unit}</span>
-                        </div>
+                      </div>
                     </div>
-                    </div>
-                    <p className="text-gray-400 mt-3 text-base">{metric.name}</p>
+                  </div>
+                  <p className="text-gray-400 mt-3 text-base">{metric.name}</p>
                 </div>
-                ))}
+              ))}
             </div>
-            </div>
+          </div>
         </motion.div>
       </div>
     </section>
