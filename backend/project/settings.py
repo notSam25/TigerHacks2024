@@ -26,6 +26,7 @@ SECRET_KEY = "django-insecure-hojue)kmc=33sn)gzpxe6#l$-*ueyw8$o1736o9(h=p&y2%_0q
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
+WSGI_APPLICATION = 'project.wsgi.application'
 
 
 # Application definition
