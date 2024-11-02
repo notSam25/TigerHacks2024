@@ -10,12 +10,12 @@ import { ResetButtons } from "./ResetButtons";
 const STORAGE_KEY = "nutriLensMetrics";
 
 const defaultMetrics = [
-    { name: "Calories", value: 0, current: 0, max: 2000, unit: "kcal" },
-    { name: "Total Fat", value: 0, current: 0, max: 65, unit: "g" },
-    { name: "Cholesterol", value: 0, current: 0, max: 300, unit: "mg" },
-    { name: "Sodium", value: 0, current: 0, max: 2300, unit: "mg" },
-    { name: "Total Carbohydrates", value: 0, current: 0, max: 300, unit: "g" },
-    { name: "Protein", value: 0, current: 0, max: 50, unit: "g" },
+  { name: 'Calories', value: 0, current: 0, max: 2000, unit: 'kcal' },
+  { name: 'Total Fat', value: 0, current: 0, max: 78, unit: 'g' },
+  { name: 'Cholesterol', value: 0, current: 0, max: 300, unit: 'mg' },
+  { name: 'Sodium', value: 0, current: 0, max: 2300, unit: 'mg' },
+  { name: 'Total Carbohydrates', value: 0, current: 0, max: 275, unit: 'g' },
+  { name: 'Protein', value: 0, current: 0, max: 50, unit: 'g' }
 ];
 
 export function Demo() {
@@ -23,84 +23,82 @@ export function Demo() {
     const [ref, inView] = useInView({
         triggerOnce: true,
         threshold: 0.1,
+      });
+
+  const [metrics, setMetrics] = useState(defaultMetrics);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMetrics(defaultMetrics.map((defaultMetric, index) => ({
+          ...defaultMetric,
+          value: parsed[index]?.value ?? defaultMetric.value,
+          max: parsed[index]?.max ?? defaultMetric.max
+        })));
+      } catch {
+        // If parsing fails, keep default metrics
+      }
+    }
+  }, []);
+
+  const hasNonDefaultMax = metrics.some((metric, index) => 
+    metric.max !== defaultMetrics[index].max
+  );
+
+  const resetMaxValues = () => {
+    setMetrics(current => current.map((metric, index) => ({
+      ...metric,
+      max: defaultMetrics[index].max
+    })));
+  };
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(
+      metrics.map(({ value, max }) => ({ value, max }))
+    ));
+  }, [metrics]);
+
+  const [dragActive, setDragActive] = useState(false);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleMaxChange = (index: number, value: string) => {
+    const newValue = value === '' ? 0 : Math.max(0, Math.min(parseInt(value), 999999));
+    if (!isNaN(newValue)) {
+      setMetrics(current => current.map((metric, i) => 
+        i === index ? { ...metric, max: newValue } : metric
+      ));
+    }
+  };
+
+  const addToDailyTotal = () => {
+    setMetrics(current => current.map(metric => ({
+      ...metric,
+      value: Math.min(metric.value + metric.current, metric.max)
+    })));
+    
+    progressSectionRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
     });
+  };
 
-    const [metrics, setMetrics] = useState(defaultMetrics);
+  const resetProgress = () => {
+    setMetrics(current => current.map(metric => ({
+      ...metric,
+      value: 0
+    })));
+  };
 
-    useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                setMetrics(
-                    defaultMetrics.map((defaultMetric, index) => ({
-                        ...defaultMetric,
-                        value: parsed[index]?.value ?? defaultMetric.value,
-                        max: parsed[index]?.max ?? defaultMetric.max,
-                    }))
-                );
-            } catch {
-                // If parsing fails, keep default metrics
-            }
-        }
-    }, []);
-
-    const hasNonDefaultMax = metrics.some((metric, index) => metric.max !== defaultMetrics[index].max);
-
-    const resetMaxValues = () => {
-        setMetrics((current) =>
-            current.map((metric, index) => ({
-                ...metric,
-                max: defaultMetrics[index].max,
-            }))
-        );
-    };
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(metrics.map(({ value, max }) => ({ value, max }))));
-    }, [metrics]);
-
-    const [dragActive, setDragActive] = useState(false);
-    const [imageData, setImageData] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleMaxChange = (index: number, value: string) => {
-        const newValue = value === "" ? 0 : Math.max(0, Math.min(parseInt(value), 999999));
-        if (!isNaN(newValue)) {
-            setMetrics((current) => current.map((metric, i) => (i === index ? { ...metric, max: newValue } : metric)));
-        }
-    };
-
-    const addToDailyTotal = () => {
-        setMetrics((current) =>
-            current.map((metric) => ({
-                ...metric,
-                value: Math.min(metric.value + metric.current, metric.max),
-            }))
-        );
-
-        progressSectionRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-        });
-    };
-
-    const resetProgress = () => {
-        setMetrics((current) =>
-            current.map((metric) => ({
-                ...metric,
-                value: 0,
-            }))
-        );
-    };
-
-    const preventInvalidInput = (e: { key: string; preventDefault: () => void }) => {
-        const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
-        if (allowedKeys.includes(e.key)) return;
-        if (["-", ".", "e"].includes(e.key) || isNaN(Number(e.key))) {
-            e.preventDefault();
-        }
-    };
+  const preventInvalidInput = (e: { key: string; preventDefault: () => void; }) => {
+    const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+    if (allowedKeys.includes(e.key)) return;
+    if (["-", ".", "e"].includes(e.key) || isNaN(Number(e.key))) {
+      e.preventDefault();
+    }
+  };
 
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
