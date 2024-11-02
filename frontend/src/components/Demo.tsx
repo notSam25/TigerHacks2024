@@ -20,11 +20,17 @@ export function Demo() {
     { name: 'Protein', value: 0, max: 50, unit: 'g' }
   ]);
 
-  const handleMaxChange = (index: number, newMax: number) => {
+  const handleMaxChange = (index: number, value: string) => {
+    // Remove any non-numeric characters and limit to max 999999
+    const sanitizedValue = value.replace(/\D/g, ''); // Keep only digits
+  
+    // Convert sanitized value to integer and clamp it to 0-999999
+    const newValue = sanitizedValue === '' ? 0 : Math.min(parseInt(sanitizedValue), 999999);
+  
     setMetrics(current => current.map((metric, i) => 
-      i === index ? { ...metric, max: newMax } : metric
+      i === index ? { ...metric, max: newValue } : metric
     ));
-  };
+  };  
 
   return (
     <section id="demo" className="py-32 bg-black">
@@ -167,13 +173,15 @@ export function Demo() {
                     <span className="text-2xl text-white font-semibold">{metric.value}</span>
                     <div className="w-16 h-[1px] bg-gray-600 my-1" />
                     <div className="flex items-center gap-1">
-                      <input 
-                        type="number" 
-                        value={metric.max}
-                        onChange={(e) => handleMaxChange(index, Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
-                        title="Click to edit daily limit"
-                      />
+                    <input 
+                    type="text" // Change to text to better control the input
+                    value={metric.max || ''}
+                    onChange={(e) => handleMaxChange(index, e.target.value)}
+                    placeholder="0"
+                    pattern="[0-9]*" // Allow only numeric input
+                    className="w-16 bg-transparent text-gray-400 hover:bg-gray-800 focus:bg-gray-800 focus:outline-none text-center rounded text-sm"
+                    title="Click to edit daily limit"
+                    />
                       <span className="text-gray-500 text-sm">{metric.unit}</span>
                     </div>
                   </div>
