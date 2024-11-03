@@ -132,6 +132,7 @@ export function Demo() {
                 body: formData,
             });
             const data = await response.json();
+            console.log(data);
 
             if (data.error) {
                 setError(data.error.message);

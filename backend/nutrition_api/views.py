@@ -2,86 +2,108 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 import os
-import requests
-import json
+import base64
+import google.generativeai as genai
+import PIL.Image
+import io
 
 load_dotenv()
+
 
 @csrf_exempt
 def NutritionFacts(request):
     if request.method == "OPTIONS":
         response = JsonResponse({})
-        response["Access-Control-Allow-Origin"] = "http://localhost:3000"  # Added http:// prefix
+        response["Access-Control-Allow-Origin"] = "http://localhost:3000"
         response["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
         response["Access-Control-Allow-Headers"] = "Content-Type"
         return response
 
     if request.method == "POST":
         try:
-            api_key = os.getenv('FOOD_VISOR_API')
-            if not api_key:
-                return JsonResponse({'error': 'API key not found in environment'}, status=500)
+            # Configure Gemini
+            genai.configure(api_key=os.getenv("API_KEY"))
 
-            image_file = request.FILES.get('image')
+            # Get image from request
+            image_file = request.FILES.get("image")
             if not image_file:
-                return JsonResponse({'error': 'No image provided'}, status=400)
+                return JsonResponse({"error": "No image provided"}, status=400)
 
-            if image_file.size > 2 * 1024 * 1024:
-                return JsonResponse({'error': 'Image size must be less than 2MB'}, status=400)
+            # Convert to PIL Image
+            image_bytes = image_file.read()
+            image = PIL.Image.open(io.BytesIO(image_bytes))
 
-            headers = {
-                'Authorization': f'Api-Key {api_key}'
-            }
+            # Initialize Gemini model
+            model = genai.GenerativeModel("gemini-1.5-flash")
 
-            # Define the scopes
-            scopes = [
-                "multiple_items",
-                "position",
-                "nutrition:macro",
-                "nutrition:micro",
-                "nutrition:nutriscore",
-                "quantity"
-            ]
-
-            # Create the form data correctly
-            files = {
-                'image': image_file,
-            }
-            
-            # Add scopes as separate form field
-            data = {
-                'scopes[]': scopes  # Use scopes[] to send as array
-            }
-
-            response = requests.post(
-                "https://vision.foodvisor.io/api/1.0/en/analysis/",
-                headers=headers,
-                files=files,
-                data=data  # Send as form data
+            # First question - ingredients
+            ingredients_response = model.generate_content(
+                [
+                    image,
+                    "\n\n",
+                    """List ONLY the ingredients and their quantities for the food in this image.
+                    Format: Return each ingredient with its amount on a new line.
+                    Example format:
+                    2 cups flour
+                    1 tsp salt
+                    3 tbsp sugar
+                    
+                    Do not include any other text or descriptions.""",
+                ]
             )
 
-            print("Response status:", response.status_code)
-            print("Response text:", response.text)
+            print(ingredients_response.text)
 
-            if response.status_code == 400:
-                return JsonResponse({'error': 'Invalid image format. Please use JPG or PNG'}, status=400)
-            elif response.status_code == 403:
-                return JsonResponse({'error': 'API key unauthorized or invalid scope'}, status=403)
-            elif response.status_code == 404:
-                return JsonResponse({'error': 'Requested scope does not exist'}, status=404)
-            elif response.status_code == 429:
-                return JsonResponse({'error': 'API rate limit exceeded'}, status=429)
-            elif response.status_code != 200:
-                return JsonResponse({
-                    'error': 'Failed to get nutrition facts',
-                    'details': response.text,
-                    'status': response.status_code
-                }, status=response.status_code)
+            # Second question - nutrition info
+            nutrition_response = model.generate_content(
+                [
+                    image,
+                    "\n\n",
+                    f"""Please analyze this food and provide ONLY the following nutritional values as numbers (no units or text):
+                1. Total Calories (kcal)
+                2. Total Fat (g)
+                3. Sodium (mg)
+                4. Cholesterol (mg)
+                5. Total Carbohydrates (g)
+                6. Protein (g)
 
-            return JsonResponse(response.json())
+                Also use these ingredients to calculate the nutrition values as well if they help: {ingredients_response.text}
+                
+                Format: Return only 6 numbers separated by commas, in the exact order above.""",
+                ]
+            )
+
+            print(nutrition_response.text)
+
+            # Parse the response into array of integers
+            try:
+                # Split by comma and convert to integers
+                nutrition_values = [
+                    int(float(x.strip()))
+                    for x in nutrition_response.text.replace("\n", "").split(",")
+                ]
+
+                print(nutrition_values)
+
+                # Ensure we have exactly 6 values
+                if len(nutrition_values) != 6:
+                    raise ValueError("Invalid number of nutrition values returned")
+
+                return JsonResponse(
+                    {
+                        "ingredients": ingredients_response.text,
+                        "nutrition": nutrition_values,
+                    }
+                )
+
+            except Exception as e:
+                print(f"Error parsing nutrition values: {str(e)}")
+                return JsonResponse(
+                    {"error": "Failed to parse nutrition values"}, status=500
+                )
 
         except Exception as e:
             print(f"Error processing request: {str(e)}")
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({"error": str(e)}, status=500)
 
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
