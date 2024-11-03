@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { Plus, X, Image as ImageIcon } from "lucide-react";
-import Image from "next/image";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { Plus } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { ResetButtons } from "./ResetButtons";
+import { ImageUploader } from "../components/ImageUploader";
 
 const STORAGE_KEY = "nutriLensMetrics";
 
@@ -95,79 +95,95 @@ export function Demo() {
     metric.max !== defaultMetrics[index].max
   );
 
-  const resetMaxValues = () => {
-    setMetrics(current => current.map((metric, index) => ({
-      ...metric,
-      max: defaultMetrics[index].max
-    })));
-  };
+    const [metrics, setMetrics] = useState(defaultMetrics);
+    const [isLoading, setIsLoading] = useState(false);
+    const [ingredients, setIngredients] = useState<string>("");
+    const [imageData, setImageData] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(
-      metrics.map(({ value, max }) => ({ value, max }))
-    ));
-  }, [metrics]);
-
-  const [dragActive, setDragActive] = useState(false);
-  const [imageData, setImageData] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleMaxChange = (index: number, value: string) => {
-    const newValue = value === '' ? 0 : Math.max(0, Math.min(parseInt(value), 999999));
-    if (!isNaN(newValue)) {
-      setMetrics(current => current.map((metric, i) => 
-        i === index ? { ...metric, max: newValue } : metric
-      ));
-    }
-  };
-
-  const addToDailyTotal = () => {
-    setMetrics(current => current.map(metric => ({
-      ...metric,
-      value: Math.min(metric.value + metric.current, metric.max)
-    })));
-    
-    progressSectionRef.current?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'start'
-    });
-  };
-
-  const resetProgress = () => {
-    setMetrics(current => current.map(metric => ({
-      ...metric,
-      value: 0
-    })));
-  };
-
-  const preventInvalidInput = (e: { key: string; preventDefault: () => void; }) => {
-    const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
-    if (allowedKeys.includes(e.key)) return;
-    if (["-", ".", "e"].includes(e.key) || isNaN(Number(e.key))) {
-      e.preventDefault();
-    }
-  };
-
-    const handleDrag = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.type === "dragenter" || e.type === "dragover") {
-            setDragActive(true);
-        } else if (e.type === "dragleave") {
-            setDragActive(false);
+    useEffect(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                setMetrics(defaultMetrics.map((defaultMetric, index) => ({
+                    ...defaultMetric,
+                    value: parsed[index]?.value ?? defaultMetric.value,
+                    max: parsed[index]?.max ?? defaultMetric.max
+                })));
+            } catch {
+                // If parsing fails, keep default metrics
+            }
         }
     }, []);
 
-    const validateAndProcessFile = async (file: File) => {
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(
+            metrics.map(({ value, max }) => ({ value, max }))
+        ));
+    }, [metrics]);
+
+    const hasNonDefaultMax = metrics.some((metric, index) => 
+        metric.max !== defaultMetrics[index].max
+    );
+
+    const handleMaxChange = (index: number, value: string) => {
+        const newValue = value === '' ? 0 : Math.max(0, parseInt(value));
+        if (!isNaN(newValue)) {
+            setMetrics(current => current.map((metric, i) => 
+                i === index ? { ...metric, max: newValue } : metric
+            ));
+        }
+    };
+
+    const addToDailyTotal = () => {
+        setMetrics(current => current.map(metric => ({
+            ...metric,
+            value: metric.value + metric.current
+        })));
+        
+        progressSectionRef.current?.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+        });
+    };
+
+    const resetProgress = () => {
+        setMetrics(current => current.map(metric => ({
+            ...metric,
+            value: 0
+        })));
+    };
+
+    const resetMaxValues = () => {
+        setMetrics(current => current.map((metric, index) => ({
+            ...metric,
+            max: defaultMetrics[index].max
+        })));
+    };
+
+    const preventInvalidInput = (e: { key: string; preventDefault: () => void; }) => {
+        const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+        if (allowedKeys.includes(e.key)) return;
+        if (["-", ".", "e"].includes(e.key) || isNaN(Number(e.key))) {
+            e.preventDefault();
+        }
+    };
+
+    const handleImageUpload = async (file: File) => {
         setError(null);
+        setIsLoading(true);
+        setImageData(null);
 
         if (!file.type.startsWith("image/")) {
             setError("Please upload an image file");
+            setIsLoading(false);
             return;
         }
 
         if (file.size > 5 * 1024 * 1024) {
             setError("Image size should be less than 5MB");
+            setIsLoading(false);
             return;
         }
 
@@ -179,44 +195,52 @@ export function Demo() {
                 method: "POST",
                 body: formData,
             });
+            
+            if (!response.ok) {
+                throw new Error("Unable to process the image. Please try again.");
+            }
+            
             const data = await response.json();
 
             if (data.error) {
-                setError(data.error.message);
-            } else {
-                setImageData(URL.createObjectURL(file));
-                setMetrics((current) =>
-                    current.map((metric) => ({
-                        ...metric,
-                        current: data[metric.name.toLowerCase()] || 0,
-                    }))
-                );
+                throw new Error(data.error.message);
             }
-        } catch {
-            setError("An error occurred while processing the image");
+
+            setImageData(URL.createObjectURL(file));
+            setIngredients(data.ingredients || "");
+            
+            if (Array.isArray(data.nutrition) && data.nutrition.length === 6) {
+                setMetrics(current => current.map((metric, index) => ({
+                    ...metric,
+                    current: data.nutrition[index] || 0,
+                })));
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "An error occurred while processing the image");
+            setImageData(null);
+        } finally {
+            setIsLoading(false);
         }
     };
-
-    const handleDrop = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            validateAndProcessFile(e.dataTransfer.files[0]);
-        }
-    }, []);
-
-    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        e.preventDefault();
-        if (e.target.files && e.target.files[0]) {
-            validateAndProcessFile(e.target.files[0]);
-        }
-    }, []);
 
     const removeImage = () => {
         setImageData(null);
         setError(null);
+        setIngredients("");
+        setMetrics(current => current.map(metric => ({
+            ...metric,
+            current: 0
+        })));
+    };
+
+    const formatIngredients = (ingredients: string) => {
+        if (!ingredients) return null;
+        return ingredients.split('\n').filter(Boolean).map((ingredient, index) => (
+            <li key={index} className="mb-2 last:mb-0 flex items-start">
+                <span className="mr-2">•</span>
+                <span>{ingredient.trim()}</span>
+            </li>
+        ));
     };
 
     return (
@@ -228,40 +252,26 @@ export function Demo() {
                 </motion.div>
 
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={inView ? { opacity: 1, scale: 1 } : {}} className="bg-gray-900 rounded-xl p-8 mb-8">
-                    <div
-                        className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors
-              ${dragActive ? "border-sky-400 bg-sky-400/10" : "border-gray-700"}
-              ${error ? "border-red-500" : ""}`}
-                        onDragEnter={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDragOver={handleDrag}
-                        onDrop={handleDrop}
-                    >
-                        {imageData ? (
-                            <div className="relative inline-block">
-                                <Image src={imageData} alt="Uploaded food" className="max-h-64 rounded-lg" width={256} height={256} />
-                                <button onClick={removeImage} className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition-colors">
-                                    <X className="h-4 w-4 text-white" />
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                <ImageIcon className="h-12 w-12 text-sky-400 mx-auto mb-4" />
-                                <p className="text-gray-400 mb-4">{error || "Drag and drop your image here or click to browse"}</p>
-                                <label className="bg-sky-600 text-white px-6 py-2 rounded-lg hover:bg-sky-700 transition-colors cursor-pointer inline-block">
-                                    Upload Image
-                                    <input type="file" className="hidden" accept="image/*" onChange={handleChange} />
-                                </label>
-                            </>
-                        )}
-                    </div>
+                    <ImageUploader
+                        isLoading={isLoading}
+                        error={error}
+                        imageData={imageData}
+                        onImageUpload={handleImageUpload}
+                        onImageRemove={removeImage}
+                    />
                 </motion.div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={inView ? { opacity: 1, scale: 1 } : {}} className="bg-gray-900 rounded-xl p-6">
                         <h3 className="text-xl font-semibold text-white mb-4">Detected Ingredients</h3>
                         <div className="text-gray-400 h-[280px] overflow-y-auto">
-                            <p className="text-center text-gray-500 italic">No ingredients detected yet</p>
+                            {ingredients ? (
+                                <ul className="text-gray-400 list-none">
+                                    {formatIngredients(ingredients)}
+                                </ul>
+                            ) : (
+                                <p className="text-center text-gray-500 italic">No ingredients detected yet</p>
+                            )}
                         </div>
                     </motion.div>
 
@@ -312,7 +322,17 @@ export function Demo() {
                                     <div className="relative inline-block">
                                         <svg className="w-48 h-48 transform -rotate-90">
                                             <circle cx="96" cy="96" r="88" fill="transparent" stroke="#1f2937" strokeWidth="12" />
-                                            <circle cx="96" cy="96" r="88" fill="transparent" stroke="#38bdf8" strokeWidth="12" strokeDasharray={2 * Math.PI * 88} strokeDashoffset={2 * Math.PI * 88 * (1 - metric.value / metric.max)} className="transition-all duration-500" />
+                                            <circle 
+                                                cx="96" 
+                                                cy="96" 
+                                                r="88" 
+                                                fill="transparent" 
+                                                stroke="#38bdf8" 
+                                                strokeWidth="12" 
+                                                strokeDasharray={2 * Math.PI * 88} 
+                                                strokeDashoffset={2 * Math.PI * 88 * Math.max(0, Math.min(1, 1 - metric.value / metric.max))} 
+                                                className="transition-all duration-500" 
+                                            />
                                         </svg>
                                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                                             <span className="text-3xl text-white font-semibold">{metric.value}</span>

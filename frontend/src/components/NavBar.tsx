@@ -32,16 +32,12 @@ export function Navbar() {
               <a href="#about" className="text-gray-300 hover:text-white transition-colors">
                 How It Works
               </a>
-              <a href="#demo" className="text-gray-300 hover:text-white transition-colors">
+              <a href="#demo" className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors">
                 Try It Now
               </a>
-              <button className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors">
-                Get Started
-              </button>
             </div>
           </motion.div>
         </div>
       </div>
     </nav>
-  );
-}
+  );}
