@@ -18,14 +18,83 @@ const defaultMetrics = [
   { name: 'Protein', value: 0, current: 0, max: 50, unit: 'g' }
 ];
 
+// Custom metrics for each button
+const metricsOptions = {
+  fit: [
+    { name: 'Calories', max: 1800 },
+    { name: 'Total Fat', max: 60 },
+    { name: 'Cholesterol', max: 200 },
+    { name: 'Sodium', max: 2000 },
+    { name: 'Total Carbohydrates', max: 250 },
+    { name: 'Protein', max: 60 }
+  ],
+  bodyBuilder: [
+    { name: 'Calories', max: 2500 },
+    { name: 'Total Fat', max: 80 },
+    { name: 'Cholesterol', max: 300 },
+    { name: 'Sodium', max: 2400 },
+    { name: 'Total Carbohydrates', max: 300 },
+    { name: 'Protein', max: 120 }
+  ],
+  gainWeight: [
+    { name: 'Calories', max: 3000 },
+    { name: 'Total Fat', max: 100 },
+    { name: 'Cholesterol', max: 350 },
+    { name: 'Sodium', max: 2500 },
+    { name: 'Total Carbohydrates', max: 350 },
+    { name: 'Protein', max: 100 }
+  ],
+  loseWeight: [
+    { name: 'Calories', max: 1500 },
+    { name: 'Total Fat', max: 50 },
+    { name: 'Cholesterol', max: 200 },
+    { name: 'Sodium', max: 1800 },
+    { name: 'Total Carbohydrates', max: 200 },
+    { name: 'Protein', max: 70 }
+  ]
+};
+
 export function Demo() {
     const progressSectionRef = useRef<HTMLDivElement>(null);
     const [ref, inView] = useInView({
         triggerOnce: true,
         threshold: 0.1,
-    });
+      });
+      type MetricType = 'fit' | 'bodyBuilder' | 'gainWeight' | 'loseWeight';
 
-    const [metrics, setMetrics] = useState(defaultMetrics);
+  const setCustomMetrics = (type: MetricType) => {
+    const selectedMetrics = metricsOptions[type];
+    setMetrics((currentMetrics) =>
+      currentMetrics.map((metric, index) => ({
+        ...metric,
+        max: selectedMetrics[index]?.max ?? metric.max
+      }))
+    );
+  };
+  const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+ setCustomMetrics(e.target.value as MetricType);
+  }
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMetrics(defaultMetrics.map((defaultMetric, index) => ({
+          ...defaultMetric,
+          value: parsed[index]?.value ?? defaultMetric.value,
+          max: parsed[index]?.max ?? defaultMetric.max
+        })));
+      } catch {
+        // If parsing fails, keep default metrics
+      }
+    }
+  }, []);
+  const [metrics, setMetrics] = useState(defaultMetrics);
+
+  const hasNonDefaultMax = metrics.some((metric, index) => 
+    metric.max !== defaultMetrics[index].max
+  );
+
     const [isLoading, setIsLoading] = useState(false);
     const [ingredients, setIngredients] = useState<string>("");
     const [imageData, setImageData] = useState<string | null>(null);
@@ -52,10 +121,6 @@ export function Demo() {
             metrics.map(({ value, max }) => ({ value, max }))
         ));
     }, [metrics]);
-
-    const hasNonDefaultMax = metrics.some((metric, index) => 
-        metric.max !== defaultMetrics[index].max
-    );
 
     const handleMaxChange = (index: number, value: string) => {
         const newValue = value === '' ? 0 : Math.max(0, parseInt(value));
@@ -241,6 +306,8 @@ export function Demo() {
                     <div className="w-[calc(48rem+1rem)] flex flex-col space-y-6">
                         <div className="flex justify-between items-center">
                             <h3 className="text-xl font-semibold text-white">Daily Progress</h3>
+                            <label htmlFor="metric-select" className="text-white mb- block"> </label>
+       
                             <ResetButtons hasNonDefaultMax={hasNonDefaultMax} onResetMaxValues={resetMaxValues} onResetProgress={resetProgress} />
                         </div>
 
@@ -275,6 +342,22 @@ export function Demo() {
                                 </div>
                             ))}
                         </div>
+                        {/* Add four rectangular buttons */}
+                        <div className="mt-8">
+        <label htmlFor="metric-select" className="text-white mb-2 block"></label>
+        <select
+          id="metric-select"
+          onChange={handleDropdownChange}
+          defaultValue = {""}
+          className="w-full py-2 px-3 rounded-lg bg-gray-900 text-gray-300 border border-gray-700 hover:border-sky-400 focus:border-sky-500 focus:outline-none transition-colors"
+        >
+          <option value="" disabled>Select your goal</option>
+          <option value="fit">Fit</option>
+          <option value="bodyBuilder">Body-Builder</option>
+          <option value="gainWeight">Gain Weight</option>
+          <option value="loseWeight">Lose Weight</option>
+        </select>
+      </div>
                     </div>
                 </motion.div>
             </div>
