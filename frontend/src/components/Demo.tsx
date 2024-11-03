@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
@@ -8,7 +8,6 @@ import { ResetButtons } from "./ResetButtons";
 import { ImageUploader } from "../components/ImageUploader";
 
 const STORAGE_KEY = "nutriLensMetrics";
-const CORS_PROXY = "https://corsproxy.io/?";
 
 const defaultMetrics = [
   { name: 'Calories', value: 0, current: 0, max: 2000, unit: 'kcal' },
@@ -59,7 +58,7 @@ export function Demo() {
     );
 
     const handleMaxChange = (index: number, value: string) => {
-        const newValue = value === '' ? 0 : Math.max(0, Math.min(parseInt(value), 999999));
+        const newValue = value === '' ? 0 : Math.max(0, parseInt(value));
         if (!isNaN(newValue)) {
             setMetrics(current => current.map((metric, i) => 
                 i === index ? { ...metric, max: newValue } : metric
@@ -70,7 +69,7 @@ export function Demo() {
     const addToDailyTotal = () => {
         setMetrics(current => current.map(metric => ({
             ...metric,
-            value: Math.min(metric.value + metric.current, metric.max)
+            value: metric.value + metric.current
         })));
         
         progressSectionRef.current?.scrollIntoView({ 
@@ -251,7 +250,17 @@ export function Demo() {
                                     <div className="relative inline-block">
                                         <svg className="w-48 h-48 transform -rotate-90">
                                             <circle cx="96" cy="96" r="88" fill="transparent" stroke="#1f2937" strokeWidth="12" />
-                                            <circle cx="96" cy="96" r="88" fill="transparent" stroke="#38bdf8" strokeWidth="12" strokeDasharray={2 * Math.PI * 88} strokeDashoffset={2 * Math.PI * 88 * (1 - metric.value / metric.max)} className="transition-all duration-500" />
+                                            <circle 
+                                                cx="96" 
+                                                cy="96" 
+                                                r="88" 
+                                                fill="transparent" 
+                                                stroke="#38bdf8" 
+                                                strokeWidth="12" 
+                                                strokeDasharray={2 * Math.PI * 88} 
+                                                strokeDashoffset={2 * Math.PI * 88 * Math.max(0, Math.min(1, 1 - metric.value / metric.max))} 
+                                                className="transition-all duration-500" 
+                                            />
                                         </svg>
                                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                                             <span className="text-3xl text-white font-semibold">{metric.value}</span>
