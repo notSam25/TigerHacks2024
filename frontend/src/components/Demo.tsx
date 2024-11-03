@@ -127,6 +127,7 @@ export function Demo() {
         formData.append("image", file);
 
         try {
+            setImageData(URL.createObjectURL(file));
             const response = await fetch("http://127.0.0.1:8000/api/v1/nutrition/", {
                 method: "POST",
                 body: formData,
@@ -135,9 +136,9 @@ export function Demo() {
             console.log(data);
 
             if (data.error) {
+                setImageData(null);
                 setError(data.error.message);
             } else {
-                setImageData(URL.createObjectURL(file));
                 setMetrics((current) =>
                     current.map((metric) => ({
                         ...metric,
