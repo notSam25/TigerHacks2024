@@ -49,7 +49,10 @@ def NutritionFacts(request):
                     3 tbsp sugar
                     
                     Do not include any other text or descriptions.""",
-                ]
+                ],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.0,
+                ),
             )
 
             print(ingredients_response.text)
@@ -59,18 +62,21 @@ def NutritionFacts(request):
                 [
                     image,
                     "\n\n",
-                    f"""Please analyze this food and provide ONLY the following nutritional values as numbers (no units or text):
+                    f"""Please analyze this food and provide ONLY the following estimated nutritional values as numbers (no units or text):
                 1. Total Calories (kcal)
                 2. Total Fat (g)
-                3. Sodium (mg)
-                4. Cholesterol (mg)
+                3. Cholesterol (mg)
+                4. Sodium (mg)
                 5. Total Carbohydrates (g)
                 6. Protein (g)
 
-                Also use these ingredients to calculate the nutrition values as well if they help: {ingredients_response.text}
+                Ensure that the numbers are relatively consistent with the amount of food in the image, and make your best inference if the image is unclear.
                 
                 Format: Return only 6 numbers separated by commas, in the exact order above.""",
-                ]
+                ],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.0,
+                ),
             )
 
             print(nutrition_response.text)
