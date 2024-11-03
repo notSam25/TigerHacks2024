@@ -61,7 +61,6 @@ export function Demo() {
         threshold: 0.1,
       });
       type MetricType = 'fit' | 'bodyBuilder' | 'gainWeight' | 'loseWeight';
-  const [metrics, setMetrics] = useState(defaultMetrics);
 
   const setCustomMetrics = (type: MetricType) => {
     const selectedMetrics = metricsOptions[type];
@@ -90,12 +89,12 @@ export function Demo() {
       }
     }
   }, []);
+  const [metrics, setMetrics] = useState(defaultMetrics);
 
   const hasNonDefaultMax = metrics.some((metric, index) => 
     metric.max !== defaultMetrics[index].max
   );
 
-    const [metrics, setMetrics] = useState(defaultMetrics);
     const [isLoading, setIsLoading] = useState(false);
     const [ingredients, setIngredients] = useState<string>("");
     const [imageData, setImageData] = useState<string | null>(null);
@@ -122,10 +121,6 @@ export function Demo() {
             metrics.map(({ value, max }) => ({ value, max }))
         ));
     }, [metrics]);
-
-    const hasNonDefaultMax = metrics.some((metric, index) => 
-        metric.max !== defaultMetrics[index].max
-    );
 
     const handleMaxChange = (index: number, value: string) => {
         const newValue = value === '' ? 0 : Math.max(0, parseInt(value));
