@@ -93,11 +93,12 @@ export function Demo() {
                 const token = localStorage.getItem("access_token");
                 if (!token) return;
 
-                const response = await fetch("http://localhost:8000/api/v1/user-nutrition/", {
+                const response = await fetch("https://tiger-hacks2024.vercel.app/api/v1/user-nutrition/", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
+                    credentials: "include",
                 });
 
                 if (!response.ok) throw new Error("Failed to fetch user data");
@@ -160,12 +161,14 @@ export function Demo() {
 
             console.log("Saving data:", data); // Debug log
 
-            const response = await fetch("http://localhost:8000/api/v1/user-nutrition/", {
+            const response = await fetch("https://tiger-hacks2024.vercel.app//api/v1/user-nutrition/", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
+                credentials: "include",
+
                 body: JSON.stringify(data),
             });
 
@@ -189,11 +192,12 @@ export function Demo() {
                 const token = localStorage.getItem("access_token");
                 if (!token) return;
 
-                const response = await fetch("http://localhost:8000/api/v1/user-nutrition/", {
+                const response = await fetch("https://tiger-hacks2024.vercel.app/api/v1/user-nutrition/", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
+                    credentials: "include",
                 });
 
                 if (!response.ok) throw new Error("Failed to fetch user data");
@@ -302,12 +306,14 @@ export function Demo() {
                 selected_goal: selectedGoal,
             };
 
-            const response = await fetch("http://localhost:8000/api/v1/user-nutrition/", {
+            const response = await fetch("https://tiger-hacks2024.vercel.app/v1/user-nutrition/", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
+                credentials: "include",
+
                 body: JSON.stringify(data),
             });
 
@@ -351,12 +357,14 @@ export function Demo() {
                 selected_goal: "",
             };
 
-            const response = await fetch("http://localhost:8000/api/v1/user-nutrition/", {
+            const response = await fetch("https://tiger-hacks2024.vercel.app/v1/user-nutrition/", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
+                credentials: "include",
+
                 body: JSON.stringify(data),
             });
 
@@ -403,9 +411,10 @@ export function Demo() {
         formData.append("image", file);
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/v1/nutrition/", {
+            const response = await fetch("https://tiger-hacks2024.vercel.app/api/v1/nutrition/", {
                 method: "POST",
                 body: formData,
+                credentials: "include",
             });
 
             if (!response.ok) {

@@ -19,11 +19,12 @@ export const AuthForm = () => {
         const endpoint = isLogin ? "/token/" : "/register/";
 
         try {
-            const response = await fetch(`http://localhost:8000${endpoint}`, {
+            const response = await fetch(`https://tiger-hacks2024.vercel.app${endpoint}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
+                credentials: "include",
                 body: JSON.stringify(isLogin ? { username, password } : { username, password, email }),
             });
 
