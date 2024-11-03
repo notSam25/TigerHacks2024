@@ -6,6 +6,12 @@ import base64
 import google.generativeai as genai
 import PIL.Image
 import io
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import UserNutritionData
+from .serializers import UserNutritionDataSerializer
 
 load_dotenv()
 
@@ -49,7 +55,10 @@ def NutritionFacts(request):
                     3 tbsp sugar
                     
                     Do not include any other text or descriptions.""",
-                ]
+                ],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.0,
+                ),
             )
 
             print(ingredients_response.text)
@@ -59,18 +68,21 @@ def NutritionFacts(request):
                 [
                     image,
                     "\n\n",
-                    f"""Please analyze this food and provide ONLY the following nutritional values as numbers (no units or text):
+                    f"""Please analyze this food and provide ONLY the following estimated nutritional values as numbers (no units or text):
                 1. Total Calories (kcal)
                 2. Total Fat (g)
-                3. Sodium (mg)
-                4. Cholesterol (mg)
+                3. Cholesterol (mg)
+                4. Sodium (mg)
                 5. Total Carbohydrates (g)
                 6. Protein (g)
 
-                Also use these ingredients to calculate the nutrition values as well if they help: {ingredients_response.text}
+                Ensure that the numbers are relatively consistent with the amount of food in the image, and make your best inference if the image is unclear.
                 
                 Format: Return only 6 numbers separated by commas, in the exact order above.""",
-                ]
+                ],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.0,
+                ),
             )
 
             print(nutrition_response.text)
@@ -107,3 +119,23 @@ def NutritionFacts(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def user_nutrition_data(request):
+    try:
+        nutrition_data = UserNutritionData.objects.get(user=request.user)
+    except UserNutritionData.DoesNotExist:
+        nutrition_data = UserNutritionData(user=request.user)
+
+    if request.method == "GET":
+        serializer = UserNutritionDataSerializer(nutrition_data)
+        return Response(serializer.data)
+
+    elif request.method == "PUT":
+        serializer = UserNutritionDataSerializer(nutrition_data, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
