@@ -348,9 +348,10 @@ export function Demo() {
         <select
           id="metric-select"
           onChange={handleDropdownChange}
+          defaultValue = {""}
           className="w-full py-2 px-3 rounded-lg bg-gray-900 text-gray-300 border border-gray-700 hover:border-sky-400 focus:border-sky-500 focus:outline-none transition-colors"
         >
-          <option value="" disabled selected>Select your goal</option>
+          <option value="" disabled>Select your goal</option>
           <option value="fit">Fit</option>
           <option value="bodyBuilder">Body-Builder</option>
           <option value="gainWeight">Gain Weight</option>
